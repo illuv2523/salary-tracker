@@ -70,9 +70,15 @@ body {
   flex: none;
 }
 
+.home-link,
 .user-email {
   color: var(--muted);
   font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.home-link:hover {
+  color: var(--text);
 }
 
 #theme-toggle,

@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm install --prefix landing && npm run build --prefix landing",
+  "outputDirectory": "landing/dist",
+  "framework": null
+}

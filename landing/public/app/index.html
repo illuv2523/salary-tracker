@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Трекер доходов и расходов</title>
+  <link rel="stylesheet" href="style.css">
+  <script>
+    if (localStorage.getItem("salary-tracker-theme") === "dark") {
+      document.documentElement.dataset.theme = "dark";
+    }
+  </script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <div>
+        <h1>Трекер доходов и расходов</h1>
+        <p>Учёт операций, итоги и графики. Данные хранятся в вашем аккаунте.</p>
+      </div>
+      <div class="header-actions">
+        <a class="home-link" href="/">О проекте</a>
+        <span id="user-email" class="user-email" hidden></span>
+        <button type="button" id="logout-button" hidden>Выйти</button>
+        <button type="button" id="theme-toggle" aria-pressed="false">Тёмная тема</button>
+      </div>
+    </header>
+
+    <section id="auth-screen" class="panel auth-panel">
+      <div class="tabs" role="tablist" aria-label="Вход или регистрация">
+        <button type="button" id="show-login" class="is-active">Вход</button>
+        <button type="button" id="show-register">Регистрация</button>
+      </div>
+      <form id="login-form">
+        <div class="fields auth-fields">
+          <label>
+            Эл. почта
+            <input id="login-email" type="email" autocomplete="username" required>
+          </label>
+          <label>
+            Пароль
+            <input id="login-password" type="password" autocomplete="current-password" required>
+          </label>
+        </div>
+        <p class="form-error" id="login-error" hidden></p>
+        <div class="form-actions">
+          <button type="submit" class="primary">Войти</button>
+        </div>
+      </form>
+      <form id="register-form" hidden>
+        <div class="fields auth-fields">
+          <label>
+            Эл. почта
+            <input id="register-email" type="email" autocomplete="username" required>
+          </label>
+          <label>
+            Пароль
+            <input id="register-password" type="password" autocomplete="new-password" minlength="8" required>
+          </label>
+          <label>
+            Пароль ещё раз
+            <input id="register-password-again" type="password" autocomplete="new-password" minlength="8" required>
+          </label>
+        </div>
+        <p class="form-error" id="register-error" hidden></p>
+        <div class="form-actions">
+          <button type="submit" class="primary">Создать аккаунт</button>
+        </div>
+      </form>
+    </section>
+
+    <div id="app" hidden>
+    <div class="tabs" role="tablist" aria-label="Разделы">
+      <button type="button" class="is-active" role="tab" id="tab-summary" aria-selected="true" aria-controls="panel-summary" data-tab="summary">Итоги</button>
+      <button type="button" role="tab" id="tab-charts" aria-selected="false" aria-controls="panel-charts" data-tab="charts">Графики</button>
+      <button type="button" role="tab" id="tab-form" aria-selected="false" aria-controls="panel-form" data-tab="form">Операция</button>
+      <button type="button" role="tab" id="tab-list" aria-selected="false" aria-controls="panel-list" data-tab="list">Список</button>
+    </div>
+
+    <div class="tab-stage">
+    <section class="tab-panel is-active" id="panel-summary" role="tabpanel" aria-labelledby="tab-summary" data-panel="summary">
+    <section class="summary" aria-label="Итоги">
+      <article class="card card-income">
+        <p class="card-label">Доход</p>
+        <p class="card-value" id="total-income">0&nbsp;₽</p>
+      </article>
+      <article class="card card-expense">
+        <p class="card-label">Расход</p>
+        <p class="card-value" id="total-expense">0&nbsp;₽</p>
+      </article>
+      <article class="card card-balance">
+        <p class="card-label">Баланс</p>
+        <p class="card-value" id="total-balance">0&nbsp;₽</p>
+      </article>
+    </section>
+
+    </section>
+    <section class="tab-panel" id="panel-charts" role="tabpanel" aria-labelledby="tab-charts" data-panel="charts">
+    <section class="charts" aria-label="Графики">
+      <article class="panel">
+        <h2>Доходы и расходы по месяцам</h2>
+        <canvas id="bar-chart" width="640" height="280" aria-label="Столбчатый график доходов и расходов по месяцам"></canvas>
+      </article>
+      <article class="panel">
+        <h2>Расходы по категориям</h2>
+        <canvas id="pie-chart" width="640" height="280" aria-label="Круговая диаграмма расходов по категориям"></canvas>
+      </article>
+    </section>
+
+    </section>
+    <section class="tab-panel" id="panel-form" role="tabpanel" aria-labelledby="tab-form" data-panel="form">
+    <section class="panel form-panel">
+      <h2 id="form-title">Новая операция</h2>
+      <form id="transaction-form" novalidate>
+        <div class="fields">
+          <label>
+            Тип
+            <select id="type" name="type" required>
+              <option value="income">Доход</option>
+              <option value="expense">Расход</option>
+            </select>
+          </label>
+          <label>
+            Сумма, ₽
+            <input id="amount" name="amount" type="number" min="0.01" step="0.01" required placeholder="0">
+          </label>
+          <label>
+            Категория
+            <select id="category" name="category" required></select>
+          </label>
+          <label>
+            Дата
+            <input id="date" name="date" type="date" required>
+          </label>
+          <label class="field-wide">
+            Комментарий
+            <input id="comment" name="comment" type="text" maxlength="120" placeholder="Необязательно">
+          </label>
+        </div>
+        <p class="form-error" id="form-error" hidden></p>
+        <div class="form-actions">
+          <button type="submit" id="submit-button" class="primary">Добавить</button>
+          <button type="button" id="cancel-button" hidden>Отмена</button>
+        </div>
+      </form>
+    </section>
+
+    </section>
+    <section class="tab-panel" id="panel-list" role="tabpanel" aria-labelledby="tab-list" data-panel="list">
+    <section class="panel">
+      <h2>Операции</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Дата</th>
+              <th>Тип</th>
+              <th>Категория</th>
+              <th>Комментарий</th>
+              <th class="num">Сумма</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="transaction-list"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="empty-state">Операций пока нет</p>
+    </section>
+    </section>
+    </div>
+    </div>
+  </div>
+  <script type="module" src="script.js"></script>
+</body>
+</html>

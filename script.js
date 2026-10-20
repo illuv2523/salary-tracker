@@ -53,11 +53,12 @@ async function api(url, options = {}) {
     ...options,
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
-  const data = await response.json().catch(() => ({}));
+  const isJson = (response.headers.get("content-type") || "").includes("application/json");
+  const data = isJson ? await response.json().catch(() => ({})) : {};
   if (response.status === 401) {
     showLoggedOut();
   }
-  return { ok: response.ok, status: response.status, data };
+  return { ok: response.ok && isJson, status: response.status, data };
 }
 
 async function refreshTransactions() {

@@ -1,0 +1,404 @@
+:root {
+  color-scheme: light;
+  --bg: #f3f5f7;
+  --surface: #ffffff;
+  --text: #1c2430;
+  --muted: #5d6b7a;
+  --line: #e4e8ee;
+  --field: #ffffff;
+  --button-muted: #eef1f5;
+  --income: #1f8a4c;
+  --income-soft: #e8f6ee;
+  --expense: #c44536;
+  --expense-soft: #fdecea;
+  --accent: #2457c5;
+  --shadow: 0 8px 24px rgba(28, 36, 48, 0.06);
+  --radius: 14px;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #12161c;
+  --surface: #1c232d;
+  --text: #e8edf4;
+  --muted: #9aa8b8;
+  --line: #2e3946;
+  --field: #151b23;
+  --button-muted: #2a3340;
+  --income: #3dbe74;
+  --income-soft: #163526;
+  --expense: #f07167;
+  --expense-soft: #3a2220;
+  --accent: #6b93f0;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.45;
+}
+
+.page {
+  width: min(1100px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 32px 0 48px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header h1 {
+  margin: 0 0 6px;
+  font-size: 1.8rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.home-link,
+.user-email {
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.home-link:hover {
+  color: var(--text);
+}
+
+#theme-toggle,
+#logout-button {
+  flex: none;
+  background: var(--button-muted);
+  color: var(--text);
+}
+
+.auth-panel {
+  max-width: 460px;
+}
+
+.auth-fields {
+  grid-template-columns: 1fr;
+}
+
+.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.header p {
+  margin: 0 0 24px;
+  color: var(--muted);
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.tabs button {
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+}
+
+.tabs button.is-active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.tab-stage {
+  position: relative;
+  overflow: hidden;
+  transition: height 0.34s ease;
+}
+
+.tab-panel {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  transition: opacity 0.34s ease, transform 0.34s ease, visibility 0.34s;
+}
+
+.tab-panel.is-active {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+  position: relative;
+}
+
+.tab-panel .summary,
+.tab-panel .charts,
+.tab-panel > .panel {
+  margin-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-stage,
+  .tab-panel {
+    transition: none;
+  }
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.card,
+.panel {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.card {
+  padding: 18px 20px;
+}
+
+.card-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.card-value {
+  margin: 8px 0 0;
+  font-size: 1.7rem;
+  font-weight: 700;
+}
+
+.card-income .card-value {
+  color: var(--income);
+}
+
+.card-expense .card-value {
+  color: var(--expense);
+}
+
+.card-balance.is-positive .card-value {
+  color: var(--income);
+}
+
+.card-balance.is-negative .card-value {
+  color: var(--expense);
+}
+
+.panel {
+  padding: 18px 20px 20px;
+  margin-bottom: 16px;
+}
+
+.charts .panel {
+  margin-bottom: 0;
+}
+
+.panel h2 {
+  margin: 0 0 14px;
+  font-size: 1.05rem;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 280px;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.field-wide {
+  grid-column: 1 / -1;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+input,
+select,
+button {
+  font: inherit;
+}
+
+input,
+select {
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--field);
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid rgba(36, 87, 197, 0.25);
+  border-color: var(--accent);
+}
+
+.form-error {
+  margin: 12px 0 0;
+  color: var(--expense);
+  font-size: 0.9rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+button {
+  height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#submit-button {
+  background: var(--accent);
+  color: #fff;
+}
+
+#cancel-button,
+.btn-edit,
+.btn-delete {
+  background: var(--button-muted);
+  color: var(--text);
+}
+
+.btn-delete {
+  color: var(--expense);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+th {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.num,
+td.amount {
+  text-align: right;
+  white-space: nowrap;
+}
+
+td.amount.income {
+  color: var(--income);
+  font-weight: 650;
+}
+
+td.amount.expense {
+  color: var(--expense);
+  font-weight: 650;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.badge.income {
+  background: var(--income-soft);
+  color: var(--income);
+}
+
+.badge.expense {
+  background: var(--expense-soft);
+  color: var(--expense);
+}
+
+.empty {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.empty[hidden],
+.form-error[hidden],
+#cancel-button[hidden],
+table[hidden] {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .header {
+    flex-direction: column;
+  }
+
+  .summary,
+  .charts,
+  .fields {
+    grid-template-columns: 1fr;
+  }
+
+  .field-wide {
+    grid-column: auto;
+  }
+}
