@@ -63,10 +63,36 @@ body {
   font-size: 1.8rem;
 }
 
-#theme-toggle {
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.user-email {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+#theme-toggle,
+#logout-button {
   flex: none;
   background: var(--button-muted);
   color: var(--text);
+}
+
+.auth-panel {
+  max-width: 460px;
+}
+
+.auth-fields {
+  grid-template-columns: 1fr;
+}
+
+.primary {
+  background: var(--accent);
+  color: #fff;
 }
 
 .header p {

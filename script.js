@@ -1,4 +1,3 @@
-const STORAGE_KEY = "salary-tracker-transactions";
 const THEME_KEY = "salary-tracker-theme";
 
 const CATEGORIES = {
@@ -32,45 +31,65 @@ const table = document.querySelector("table");
 const barCanvas = document.getElementById("bar-chart");
 const pieCanvas = document.getElementById("pie-chart");
 const themeButton = document.getElementById("theme-toggle");
+const logoutButton = document.getElementById("logout-button");
+const userEmail = document.getElementById("user-email");
+const authScreen = document.getElementById("auth-screen");
+const app = document.getElementById("app");
+const loginForm = document.getElementById("login-form");
+const registerForm = document.getElementById("register-form");
+const showLoginButton = document.getElementById("show-login");
+const showRegisterButton = document.getElementById("show-register");
 
 let editingId = null;
+let transactions = [];
 
 function readTransactions() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  return transactions;
 }
 
-function saveTransactions(transactions) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
-}
-
-function createTransaction(data) {
-  const transactions = readTransactions();
-  transactions.push({
-    id: crypto.randomUUID(),
-    type: data.type,
-    amount: data.amount,
-    category: data.category,
-    date: data.date,
-    comment: data.comment,
+async function api(url, options = {}) {
+  const response = await fetch(url, {
+    headers: { "Content-Type": "application/json" },
+    ...options,
+    body: options.body ? JSON.stringify(options.body) : undefined,
   });
-  saveTransactions(transactions);
+  const data = await response.json().catch(() => ({}));
+  if (response.status === 401) {
+    showLoggedOut();
+  }
+  return { ok: response.ok, status: response.status, data };
 }
 
-function updateTransaction(id, data) {
-  const transactions = readTransactions().map((item) =>
-    item.id === id ? { ...item, ...data } : item
-  );
-  saveTransactions(transactions);
+async function refreshTransactions() {
+  const result = await api("/api/transactions");
+  if (!result.ok) return false;
+  transactions = result.data;
+  render();
+  return true;
 }
 
-function deleteTransaction(id) {
-  saveTransactions(readTransactions().filter((item) => item.id !== id));
+async function createTransaction(data) {
+  const result = await api("/api/transactions", { method: "POST", body: data });
+  if (!result.ok) {
+    showError(result.data.error || "Не удалось сохранить операцию.");
+    return false;
+  }
+  return refreshTransactions();
+}
+
+async function updateTransaction(id, data) {
+  const result = await api("/api/transactions", { method: "PUT", body: { id, ...data } });
+  if (!result.ok) {
+    showError(result.data.error || "Не удалось сохранить операцию.");
+    return false;
+  }
+  return refreshTransactions();
+}
+
+async function deleteTransaction(id) {
+  const result = await api("/api/transactions", { method: "DELETE", body: { id } });
+  if (!result.ok) return false;
+  return refreshTransactions();
 }
 
 function todayISO() {
@@ -200,15 +219,11 @@ function renderTable(transactions) {
     deleteButton.type = "button";
     deleteButton.className = "btn-delete";
     deleteButton.textContent = "Удалить";
-    deleteButton.addEventListener("click", () => {
+    deleteButton.addEventListener("click", async () => {
       const label = item.comment || item.category;
-      if (window.confirm(`Удалить операцию «${label}»?`)) {
-        deleteTransaction(item.id);
-        if (editingId === item.id) {
-          resetForm();
-        }
-        render();
-      }
+      if (!window.confirm(`Удалить операцию «${label}»?`)) return;
+      const ok = await deleteTransaction(item.id);
+      if (ok && editingId === item.id) resetForm();
     });
 
     actions.append(editButton, deleteButton);
@@ -543,20 +558,18 @@ typeInput.addEventListener("change", () => {
   fillCategories(typeInput.value);
 });
 
-form.addEventListener("submit", (event) => {
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const result = readForm();
   if (result.error) {
     showError(result.error);
     return;
   }
-  if (editingId) {
-    updateTransaction(editingId, result.data);
-  } else {
-    createTransaction(result.data);
-  }
+  const ok = editingId
+    ? await updateTransaction(editingId, result.data)
+    : await createTransaction(result.data);
+  if (!ok) return;
   resetForm();
-  render();
   showTab("list");
 });
 
@@ -576,8 +589,8 @@ themeButton.addEventListener("click", () => {
 
 syncThemeButton();
 
-const tabStage = document.querySelector(".tab-stage");
-const tabButtons = [...document.querySelectorAll(".tabs button")];
+const tabStage = document.querySelector("#app .tab-stage");
+const tabButtons = [...document.querySelectorAll("#app .tabs button")];
 
 function showTab(name) {
   const current = document.querySelector(".tab-panel.is-active");
@@ -617,5 +630,94 @@ window.addEventListener("resize", () => {
   renderCharts(readTransactions());
 });
 
+function setAuthError(node, message) {
+  node.textContent = message;
+  node.hidden = !message;
+}
+
+function showAuthMode(mode) {
+  const login = mode === "login";
+  loginForm.hidden = !login;
+  registerForm.hidden = login;
+  showLoginButton.classList.toggle("is-active", login);
+  showRegisterButton.classList.toggle("is-active", !login);
+  setAuthError(document.getElementById("login-error"), "");
+  setAuthError(document.getElementById("register-error"), "");
+}
+
+function showLoggedOut() {
+  transactions = [];
+  authScreen.hidden = false;
+  app.hidden = true;
+  logoutButton.hidden = true;
+  userEmail.hidden = true;
+  userEmail.textContent = "";
+}
+
+function showLoggedIn(email) {
+  authScreen.hidden = true;
+  app.hidden = false;
+  logoutButton.hidden = false;
+  userEmail.hidden = false;
+  userEmail.textContent = email;
+  resetForm();
+}
+
+showLoginButton.addEventListener("click", () => showAuthMode("login"));
+showRegisterButton.addEventListener("click", () => showAuthMode("register"));
+
+loginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const result = await api("/api/login", {
+    method: "POST",
+    body: {
+      email: document.getElementById("login-email").value,
+      password: document.getElementById("login-password").value,
+    },
+  });
+  if (!result.ok) {
+    setAuthError(document.getElementById("login-error"), result.data.error || "Не удалось войти.");
+    return;
+  }
+  showLoggedIn(result.data.email);
+  await refreshTransactions();
+});
+
+registerForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const password = document.getElementById("register-password").value;
+  const again = document.getElementById("register-password-again").value;
+  const errorNode = document.getElementById("register-error");
+  if (password !== again) {
+    setAuthError(errorNode, "Пароли не совпадают.");
+    return;
+  }
+  const result = await api("/api/register", {
+    method: "POST",
+    body: {
+      email: document.getElementById("register-email").value,
+      password,
+    },
+  });
+  if (!result.ok) {
+    setAuthError(errorNode, result.data.error || "Не удалось создать аккаунт.");
+    return;
+  }
+  showLoggedIn(result.data.email);
+  await refreshTransactions();
+});
+
+logoutButton.addEventListener("click", async () => {
+  await api("/api/logout", { method: "POST" });
+  showLoggedOut();
+});
+
 resetForm();
-render();
+
+const session = await api("/api/me");
+if (session.ok) {
+  showLoggedIn(session.data.email);
+  await refreshTransactions();
+} else {
+  showLoggedOut();
+}
